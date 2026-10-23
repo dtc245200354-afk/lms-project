@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  webapp:
+    build: .
+    container_name: lms-webapp
+    restart: always
+    ports:
+      - "5000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: lms_user
+      DB_PASSWORD: lms_password
+      DB_NAME: lms_db
+    depends_on:
+      - db
+    networks:
+      - lms-network
+
+  db:
+    image: mysql:8.0
+    container_name: lms-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: lms_db
+      MYSQL_USER: lms_user
+      MYSQL_PASSWORD: lms_password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - lms-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: lms-phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root_password
+    depends_on:
+      - db
+    networks:
+      - lms-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: lms-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - webapp
+    networks:
+      - lms-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: lms-prometheus
+    restart: always
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9091:9090"
+    networks:
+      - lms-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: lms-grafana
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - lms-network
+
+networks:
+  lms-network:
+    driver: bridge
+
+volumes:
+  db_data:
