@@ -6,7 +6,10 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mysql2": "^3.6.0"
+    "body-parser": "^2.4.0",
+    "cors": "^2.8.6",
+    "express": "^4.22.3",
+    "mysql2": "^3.24.6",
+    "prom-client": "^15.1.3"
   }
 }

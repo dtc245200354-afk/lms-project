@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ thống LMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<script>
+    // Bảo vệ trang: Chuyển về trang đăng nhập nếu chưa có dữ liệu user
+    const user = JSON.parse(localStorage.getItem('lms_user'));
+    if (!user) window.location.href = '/login.html';
+</script>
+
+<nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#">Xin chào, <span id="userName"></span>!</a>
+        <button class="btn btn-light btn-sm" onclick="logout()">Đăng xuất</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-7">
+            <h4 class="mb-3">Danh sách Khóa học</h4>
+            <div id="course-list">Đang tải...</div>
+        </div>
+        <div class="col-md-5">
+            <h4 class="mb-3">Danh sách Học viên</h4>
+            <table class="table table-bordered bg-white">
+                <thead><tr><th>Họ tên</th><th>Email</th></tr></thead>
+                <tbody id="student-list"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('userName').innerText = user.name;
+
+    function logout() {
+        localStorage.removeItem('lms_user');
+        window.location.href = '/login.html';
+    }
+
+    // Tải Khóa học
+    fetch('/api/courses').then(res => res.json()).then(courses => {
+        document.getElementById('course-list').innerHTML = courses.map(c => `
+            <div class="card mb-3"><div class="card-body">
+                <h5>${c.title}</h5><p class="text-muted">${c.description}</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewLessons(${c.id})">Xem Bài Học</button>
+                <ul id="lessons-${c.id}" class="mt-2 mb-0 text-primary" style="display:none;"></ul>
+            </div></div>
+        `).join('');
+    });
+
+    function viewLessons(id) {
+        const ul = document.getElementById(`lessons-${id}`);
+        if (ul.style.display === 'block') return ul.style.display = 'none';
+        fetch(`/api/courses/${id}/lessons`).then(res => res.json()).then(lessons => {
+            ul.innerHTML = lessons.length ? lessons.map(l => `<li><strong>${l.title}</strong>: ${l.content}</li>`).join('') : '<li>Trống</li>';
+            ul.style.display = 'block';
+        });
+    }
+
+    // Tải Học viên
+    fetch('/api/students').then(res => res.json()).then(students => {
+        document.getElementById('student-list').innerHTML = students.map(s => `<tr><td>${s.name}</td><td>${s.email}</td></tr>`).join('');
+    });
+</script>
+</body>
+</html>
